@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from database.database import deadlines
 from aiogram.types import Message
 from lexicon.lexicon_ru import LEXICON_RU
@@ -10,8 +10,8 @@ async def registration_of_deadlines(message: Message):
     tasks = []
     for lesson in deadlines:
         for paragraph in deadlines[lesson]:
-            for time_delta in paragraph.reminder:
-                tasks.append(launch_deadlines(message, lesson, paragraph, time_delta))
+            for time_delta in [21600, 86400] + paragraph.reminder:
+                tasks.append(launch_deadlines(message, lesson, paragraph, timedelta(seconds=time_delta)))
     await asyncio.gather(*tasks)
 
 
@@ -19,10 +19,11 @@ async def launch_deadlines(message: Message, lesson: str, paragraph: str, time_d
     current_time = datetime.now()
     if paragraph.deadline - time_delta > current_time:
         await asyncio.sleep((paragraph.deadline - time_delta - current_time).seconds)
-        if time_delta == 604_800:
+        if time_delta.seconds == 604800:
             await message.answer(text=LEXICON_RU['courses_deadlines']['deadline_far_reminder'].format(lesson, paragraph.name))
         else:
             await message.answer(text=LEXICON_RU['courses_deadlines']['deadline_reminder'].format(lesson, paragraph, get_plural(time_delta.hour, "ЧАС, ЧАСА, ЧАСОВ")))
+    return
 
 
 async def launch_user_deadlines(message: Message, name: str, deadline: datetime, time_delta: int):
