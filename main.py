@@ -5,6 +5,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from config_data.config import Config, load_config
 from handlers import user_handlers
+from middlewares.exists_user import ExistsUserMiddleware
 import asyncio
 import logging
 
@@ -22,6 +23,8 @@ async def main():
     dp = Dispatcher()
 
     dp.include_router(user_handlers.router)
+
+    dp.update.outer_middleware(ExistsUserMiddleware())
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
