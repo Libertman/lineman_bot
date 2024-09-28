@@ -6,6 +6,7 @@ from pytils.numeral import get_plural
 import asyncio
 
 
+
 async def registration_of_deadlines(message: Message):
     tasks = []
     for lesson in deadlines:
@@ -26,10 +27,13 @@ async def launch_deadlines(message: Message, lesson: str, paragraph: str, time_d
     return
 
 
+def translate_to_date(delta: timedelta):
+    hours = delta.seconds % 86400 // 3600
+    minutes = delta.seconds % 3600 // 60
+    return f'{get_plural(delta.days, "ДЕНЬ, ДНЯ, ДНЕЙ") if delta.days > 0 else ""} ' + f'{get_plural(hours, "ЧАС, ЧАСА, ЧАСОВ") if hours > 0 else ""} ' + f'{get_plural(minutes, "МИНУТА, МИНУТЫ, МИНУТ") if minutes > 0 else ""}'
+
+
 async def launch_user_deadlines(message: Message, name: str, deadline: datetime, time_delta: int):
     current_time = datetime.now()
     await asyncio.sleep((deadline - time_delta - current_time).seconds)
-    hours = time_delta.seconds % 86400 // 3600
-    minutes = time_delta.seconds % 3600 // 60
-    total_delta_time = f'{get_plural(time_delta.days, "ДЕНЬ, ДНЯ, ДНЕЙ") if time_delta.days > 0 else ""}' + f'{get_plural(hours, "ЧАС, ЧАСА, ЧАСОВ") if hours > 0 else ""}' + f'{get_plural(minutes, "МИНУТА, МИНУТЫ, МИНУТ") if minutes > 0 else ""}'
-    await message.answer(text=LEXICON_RU['deadline_user_reminder'].format(name, total_delta_time))
+    await message.answer(text=LEXICON_RU['deadline_user_reminder'].format(name, translate_to_date(time_delta)))
