@@ -11,18 +11,19 @@ def dict_factory(cursor, row):
         save_dict[col[0]] = row[idx]
     return save_dict
 
-def add_user(user_id, username, fullname):
+def add_user(user_id, flag, username=None, fullname=None):
     with sqlite3.connect(PATH_DATABASE) as con:
         con.row_factory = dict_factory
         con.execute('''
         CREATE TABLE IF NOT EXISTS users(
         user_id INTEGER PRIMARY KEY,
-        username TEXT NOT NULL,
-        fullname TEXT NOT NULL)''')
+        username TEXT,
+        fullname TEXT,
+        flag INTEGER NOT NULL)''')
         con.execute("INSERT INTO users "
-                    "(user_id, username, fullname) "
-                    "VALUES (?, ?, ?)",
-                    [user_id, username, fullname])
+                    "(user_id, username, fullname, flag) "
+                    "VALUES (?, ?, ?, ?)",
+                    [user_id, username, fullname, flag])
         con.commit()
 
 def update_format_args(sql, parameters: dict):

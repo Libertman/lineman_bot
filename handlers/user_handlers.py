@@ -16,10 +16,16 @@ router = Router()
 @router.message(CommandStart())
 async def process_start_command(message: Message):
     await message.answer(LEXICON_RU['/start'], reply_markup=help_start_keyboard)
-    flag = get_user(user_id=message.from_user.id).flag
-    if not flag:
-        update_user(user_id=message.from_user.id, flag=1)
-        await registration_of_deadlines(message)
+    if message.chat.type == 'private':
+        flag = get_user(user_id=message.from_user.id)['flag']
+        if not flag:
+            update_user(user_id=message.from_user.id, flag=1)
+            await registration_of_deadlines(message)
+    else:
+        flag = get_user(user_id=message.chat.id)['flag']
+        if not flag:
+            update_user(user_id=message.chat.id, flag=1)
+            await registration_of_deadlines(message)
 
 
 @router.message(or_f(F.text == 'Помощь', F.text == 'ПОМОГИТЕ'))
