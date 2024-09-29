@@ -12,17 +12,20 @@ subjects_button = KeyboardButton(text='ДЕДЛАЙНЫ ПО ПРЕДМЕТАМ'
 help_button = KeyboardButton(text='Помощь')
 authors_button = KeyboardButton(text='Создатели')
 
-# subject buttons
-pe_button = KeyboardButton(text='⚽️Физическая культура⚽️')
-economics_button = KeyboardButton(text='🤑Экономическая культура🤑')
-russia_button = KeyboardButton(text='🇷🇺Россия: гос. основание и мировоззрение🇷🇺')
-digital_button = KeyboardButton(text='💻Цифровая грамотность💻')
-english_button = KeyboardButton(text='🇺🇸Английский язык🇺🇸')
-
 # help button
 help_start_button = KeyboardButton(text='ПОМОГИТЕ')
 
 # INLINE BUTTONS
+
+# cancel button
+cancel_button = InlineKeyboardButton(text='Назад', callback_data='cancel')
+
+# subject buttons
+pe_button = InlineKeyboardButton(text='⚽️Физическая культура⚽️', callback_data='pe')
+economics_button = InlineKeyboardButton(text='🤑Экономическая культура🤑', callback_data='economics')
+russia_button = InlineKeyboardButton(text='🇷🇺Россия: гос. осн. и мировоззрение🇷🇺', callback_data='russia')
+digital_button = InlineKeyboardButton(text='💻Цифровая грамотность💻', callback_data='digital')
+english_button = InlineKeyboardButton(text='🇺🇸Английский язык🇺🇸', callback_data='english')
 
 # url courses buttons
 pe_course = InlineKeyboardButton(text='КУРС ПО ФИЗИЧЕСКОЙ КУЛЬТУРЕ', url="https://openedu.ru/course/spbstu/PHYSCUL/?session=fall_2024")
@@ -55,44 +58,48 @@ help_start_keyboard = ReplyKeyboardMarkup(
     keyboard=[[help_start_button]],
 )
 
+# INLINE KEYBOARDS
+
 # subject keyboard
-subjects_keyboard = ReplyKeyboardMarkup(
-    keyboard=[[pe_button],
+subjects_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[[pe_button],
               [economics_button],
               [russia_button],
               [digital_button],
               [english_button]],
-    resize_keyboard=True
 )
-
-# INLINE KEYBOARDS
 
 # pe keyboard
 pe_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[[pe_course],
-                     [pe_answer]]
+                     [pe_answer],
+                     [cancel_button]]
 )
 
 # economics keyboard
 economics_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[[economics_course],
-                     [economics_answer]]
+                     [economics_answer],
+                     [cancel_button]]
 )
 
 # russia keyboard
 russia_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[[russia_course],
-                     [russia_answer]]
+                     [russia_answer],
+                     [cancel_button]]
 )
 
 # digital keyboard
 digital_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[[digital_course],
-                     [digital_answer]]
+                     [digital_answer],
+                     [cancel_button]]
 )
 
 # english keyboard
 english_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[[english_course],
-                     [english_answer]]
+                     [english_answer],
+                     [cancel_button]]
 )

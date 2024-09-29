@@ -2,6 +2,8 @@ from aiogram import BaseMiddleware
 from aiogram.types import Update
 from database.sql import get_user, add_user, update_user
 from aiogram.types import Message
+from services.services import registration_of_deadlines
+import asyncio
 
 
 class ExistsUserMiddleware(BaseMiddleware):
@@ -20,12 +22,13 @@ class ExistsUserMiddleware(BaseMiddleware):
         user_id = this_user.id
         username = this_user.username
         fullname = this_user.full_name
+        flag = this_user.flag
 
         if username is None:
             username = ""
 
         if user is None:
-            add_user(user_id, username, fullname)
+            add_user(user_id, username, fullname, 0)
         elif username != user['username'] or fullname != user['fullname']:
             update_user(user['user_id'], username=username, fullname=fullname)
-        return handler(event, data)
+        return handler(event, data, flag)
