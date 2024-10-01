@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ChatMemberUpdated
 from aiogram.filters import Command, CommandStart, or_f
 from lexicon.lexicon_ru import LEXICON_RU
 from services.services import registration_of_deadlines
@@ -8,9 +8,13 @@ from database.database import deadlines, nearest_list_deadlines
 from services.services import translate_to_date
 from datetime import datetime
 from database.sql import get_user, update_user
+import logging
 
 
 router = Router()
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG, format='{filename}:{lineno} #{levelname:8} '
+                        '[{asctime}] - {name} - {message}', style='{')
 
 
 @router.message(CommandStart())
@@ -46,7 +50,7 @@ async def process_nearest_deadlines_command(message: Message):
     return_deadlines = "\n".join([f"{ind}) <b>{deadline.subject}</b>: {deadline.name} -> {deadline.deadline.strftime('%d.%m.%y')}\nОсталось: {translate_to_date(deadline.deadline - datetime.now())}" for ind, deadline in enumerate(nearest_list_deadlines[:imp_index], 1)])
     return_text = f'<b>БЛИЖАЙШИЕ ДЕДЛАЙНЫ</b>\n\n{return_deadlines}'
     return_text += '\n\n...' if imp_index < len(nearest_list_deadlines) else ''
-    await message.answer(return_text)
+    await message.answer(return_text, reply_markup=functions_keyboard)
 
 
 @router.message(F.text == 'Создатели')
@@ -96,9 +100,11 @@ async def process_cancel_press(callback: CallbackQuery):
 
 @router.message(F.photo)
 async def process_photo_command(message: Message):
-    await message.answer_photo('AgACAgIAAxkBAAOxZNy9k3OeJws7YoOYouRq3nuPDzAAAp3OMRt6ouBKOIxIA6inc1QBAAMCAAN5AAMwBAk')
+    if message.chat.type == 'private':
+        await message.answer_photo('https://www.meme-arsenal.com/memes/504e722544e9173d566732bf258d253f.jpg')
 
 
 @router.message(F.sticker)
 async def process_sticker_command(message: Message):
-    await message.answer_sticker('CAACAgIAAxkBAAO6ZNzAy6gWdfJeLtgN3bY4T3HcmsYAArYmAAIYKJFJVvHiKO8JxjUwBA')
+    if message.chat.type == 'private':
+        await message.answer_sticker('CAACAgIAAxkBAAO6ZNzAy6gWdfJeLtgN3bY4T3HcmsYAArYmAAIYKJFJVvHiKO8JxjUwBA')

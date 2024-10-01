@@ -10,7 +10,7 @@ async def registration_of_deadlines(message: Message):
     tasks = []
     for lesson in deadlines:
         for paragraph in deadlines[lesson]:
-            for time_delta in ([21600, 86400] + paragraph.reminder):
+            for time_delta in ([21600, 129600] + paragraph.reminder):
                 tasks.append(launch_deadlines(message, lesson, paragraph, timedelta(seconds=time_delta)))
     await asyncio.gather(*tasks)
 
@@ -20,8 +20,8 @@ async def launch_deadlines(message: Message, lesson: str, paragraph: str, time_d
     if paragraph.deadline - time_delta > current_time:
         sleep_time = paragraph.deadline - time_delta - current_time
         await asyncio.sleep(sleep_time.days * 86400 + sleep_time.seconds)
-        if time_delta.days == 7:
-            await message.answer(text=LEXICON_RU['courses_deadlines']['deadline_far_reminder'].format(lesson, paragraph.name))
+        if time_delta.days >= 3:
+            await message.answer(text=LEXICON_RU['courses_deadlines']['deadline_far_reminder'].format(lesson, paragraph.name, translate_to_date(time_delta)))
         else:
             await message.answer(text=LEXICON_RU['courses_deadlines']['deadline_common_reminder'].format(lesson, paragraph.name, get_plural(time_delta.seconds % 86400 // 3600, "ЧАС, ЧАСА, ЧАСОВ")))
     return

@@ -25,7 +25,7 @@ class ExistsUserMiddleware(BaseMiddleware):
             this_user = data['event_context'].chat
             user = get_user(user_id=this_user.id)
             username = None
-            fullname = None
+            fullname = this_user.title
         user_id = this_user.id
 
         if user is None:

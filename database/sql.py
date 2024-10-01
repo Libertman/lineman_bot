@@ -11,7 +11,7 @@ def dict_factory(cursor, row):
         save_dict[col[0]] = row[idx]
     return save_dict
 
-def add_user(user_id, flag, username=None, fullname=None):
+def add_user(user_id, flag, fullname, username=None):
     with sqlite3.connect(PATH_DATABASE) as con:
         con.row_factory = dict_factory
         con.execute('''
