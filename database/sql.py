@@ -1,8 +1,9 @@
+from environs import Env
 import sqlite3
 
 
-
-PATH_DATABASE="database/database.db"
+env = Env()
+env.read_env()
 
 
 def dict_factory(cursor, row):
@@ -12,7 +13,7 @@ def dict_factory(cursor, row):
     return save_dict
 
 def add_user(user_id, flag, fullname, username=None):
-    with sqlite3.connect(PATH_DATABASE) as con:
+    with sqlite3.connect(env('PATH_DATABASE')) as con:
         con.row_factory = dict_factory
         con.execute('''
         CREATE TABLE IF NOT EXISTS users(
@@ -34,14 +35,14 @@ def update_format_args(sql, parameters: dict):
     return sql, list(parameters.values())
 
 def get_user(**kwargs):
-    with sqlite3.connect(PATH_DATABASE) as con:
+    with sqlite3.connect(env('PATH_DATABASE')) as con:
         con.row_factory = dict_factory
         sql = "SELECT * FROM users"
         sql, parameters = update_format_args(sql, kwargs)
         return con.execute(sql, parameters).fetchone()
 
 def get_users(**kwargs):
-    with sqlite3.connect(PATH_DATABASE) as con:
+    with sqlite3.connect(env('PATH_DATABASE')) as con:
         con.row_factory = dict_factory
         sql = "SELECT * FROM users"
         sql, parameters = update_format_args(sql, kwargs)
@@ -59,7 +60,7 @@ def update_format(sql, parameters: dict):
     return sql, list(parameters.values())
 
 def update_user(user_id, **kwargs):
-    with sqlite3.connect(PATH_DATABASE) as con:
+    with sqlite3.connect(env('PATH_DATABASE')) as con:
         con.row_factory = dict_factory
         sql = f"UPDATE users SET"
         sql, parameters = update_format(sql, kwargs)
