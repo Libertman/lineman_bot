@@ -22,7 +22,7 @@ async def process_start_command(message: Message):
     await message.answer(LEXICON_RU['/start'], reply_markup=help_start_keyboard)
     if message.chat.type == 'private':
         flag = get_user(user_id=message.from_user.id)['flag']
-        logger.debug(flag)
+        logger.debug(datetime.now())
         if not flag:
             update_user(user_id=message.from_user.id, flag=1)
             await registration_of_deadlines(message)
