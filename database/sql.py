@@ -37,6 +37,12 @@ def update_format_args(sql, parameters: dict):
 def get_user(**kwargs):
     with sqlite3.connect(env('PATH_DATABASE')) as con:
         con.row_factory = dict_factory
+        con.execute('''
+        CREATE TABLE IF NOT EXISTS users(
+        user_id INTEGER PRIMARY KEY,
+        username TEXT,
+        fullname TEXT,
+        flag INTEGER NOT NULL)''')
         sql = "SELECT * FROM users"
         sql, parameters = update_format_args(sql, kwargs)
         return con.execute(sql, parameters).fetchone()
