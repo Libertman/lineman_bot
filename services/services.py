@@ -17,9 +17,9 @@ async def registration_of_deadlines(message: Message):
 
 
 async def launch_deadlines(message: Message, lesson: str, paragraph: str, time_delta: timedelta):
-    current_time = datetime.now(timezone('Europe/Moscow'))
-    if paragraph.deadline - time_delta > current_time:
-        sleep_time = paragraph.deadline - time_delta - current_time
+    current_time = int(datetime.now(timezone('Europe/Moscow')).timestamp())
+    if (paragraph.deadline - time_delta).timestamp() > current_time:
+        sleep_time = timedelta(seconds=((paragraph.deadline - time_delta).timestamp() - current_time))
         await asyncio.sleep(sleep_time.days * 86400 + sleep_time.seconds)
         if time_delta.days >= 3:
             await message.answer(text=LEXICON_RU['courses_deadlines']['deadline_far_reminder'].format(lesson, paragraph.name, translate_to_date(time_delta)))
@@ -27,7 +27,8 @@ async def launch_deadlines(message: Message, lesson: str, paragraph: str, time_d
             await message.answer(text=LEXICON_RU['courses_deadlines']['deadline_common_reminder'].format(lesson, paragraph.name, get_plural(time_delta.seconds % 86400 // 3600, "ЧАС, ЧАСА, ЧАСОВ")))
     return
 
-def translate_to_date(delta: timedelta):
+def translate_to_date(delta: float):
+    delta = timedelta(seconds=delta)
     hours = delta.seconds % 86400 // 3600
     minutes = delta.seconds % 3600 // 60
     return f'{get_plural(delta.days, "ДЕНЬ, ДНЯ, ДНЕЙ") + " " if delta.days > 0 else ""}' + f'{get_plural(hours, "ЧАС, ЧАСА, ЧАСОВ") + " " if hours > 0 else ""}' + f'{get_plural(minutes, "МИНУТА, МИНУТЫ, МИНУТ") if minutes > 0 else ""}'
