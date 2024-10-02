@@ -2,6 +2,7 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from functools import reduce
 from itertools import dropwhile
+from pytz import timezone
 
 
 
@@ -46,13 +47,13 @@ class Deadline:
 #               Deadline(name='Монолог по модулю 1 "Personality"', deadline=datetime(2024, 10, 15), reminder=[280800], subject='Английский язык')]}
 
 deadlines = {'Физическая культура':
-             [Deadline(name='Аттестация по модулю: Основы теории физической культуры', deadline=datetime(2024, 10, 2, 22, 52), subject='Физическая культура'),
-              Deadline(name='Аттестация по модулю: Медико-биологические основы физической культуры', deadline=datetime(2024, 10, 2, 22, 52, 30), subject='Физическая культура'),
-              Deadline(name='Аттестация по модулю: Самостоятельные занятия физическими упражнениями', deadline=datetime(2024, 10, 2, 22, 53), subject='Физическая культура'),
-              Deadline(name='Аттестация по модулю: Физическая культура в профессиональной деятельности специалиста', deadline=datetime(2024, 10, 2, 22, 53, 30), subject=''),
-              Deadline(name='Аттестация по модулю: Спорт как социальное явление', deadline=datetime(2024, 10, 2, 22, 54), subject='Физическая культура'),
-              Deadline(name='Аттестация по модулю: Физическая культура при различных заболеваниях', deadline=datetime(2024, 10, 3, 2, 54, 30), subject='Физическая культура'),
-              Deadline(name='Промежуточная аттестация', deadline=datetime(2024, 11, 15), subject='Физическая культура'),
+             [Deadline(name='Аттестация по модулю: Основы теории физической культуры', deadline=datetime(2024, 10, 3, 2, 17), subject='Физическая культура'),
+              Deadline(name='Аттестация по модулю: Медико-биологические основы физической культуры', deadline=datetime(2024, 10, 3, 2, 17, 30), subject='Физическая культура'),
+              Deadline(name='Аттестация по модулю: Самостоятельные занятия физическими упражнениями', deadline=datetime(2024, 10, 3, 2, 18), subject='Физическая культура'),
+              Deadline(name='Аттестация по модулю: Физическая культура в профессиональной деятельности специалиста', deadline=datetime(2024, 10, 3, 2, 18, 30), subject=''),
+              Deadline(name='Аттестация по модулю: Спорт как социальное явление', deadline=datetime(2024, 10, 3, 2, 19), subject='Физическая культура'),
+              Deadline(name='Аттестация по модулю: Физическая культура при различных заболеваниях', deadline=datetime(2024, 10, 3, 2, 19, 30), subject='Физическая культура'),
+              Deadline(name='Промежуточная аттестация', deadline=datetime(2024, 10, 3, 2, 20), subject='Физическая культура'),
               Deadline(name='Итоговый тест с прокторингом', deadline=datetime(2024, 11, 30), subject='Физическая культура')],
              'Экономическая культура':
              [Deadline(name='Основные экономические категории', deadline=datetime(2024, 9, 22), subject='Экономическая культура'),
@@ -77,4 +78,4 @@ deadlines = {'Физическая культура':
              [Deadline(name='Тест по модулю 1', deadline=datetime(2024, 10, 8), subject='Английский язык'),
               Deadline(name='Монолог по модулю 1 "Personality"', deadline=datetime(2024, 10, 15), reminder=[280800], subject='Английский язык')]}
 
-nearest_list_deadlines = list(dropwhile(lambda x: x.deadline <= datetime.now(), sorted(reduce(lambda x, y: x + y, [values for values in deadlines.values()]),key=lambda x: x.deadline)))
+nearest_list_deadlines = list(dropwhile(lambda x: x.deadline <= datetime.now(timezone('Europe/Moscow')), sorted(reduce(lambda x, y: x + y, [values for values in deadlines.values()]),key=lambda x: x.deadline)))

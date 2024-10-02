@@ -3,6 +3,7 @@ from database.database import deadlines
 from aiogram.types import Message
 from lexicon.lexicon_ru import LEXICON_RU
 from pytils.numeral import get_plural
+from pytz import timezone
 import asyncio
 
 
@@ -16,7 +17,7 @@ async def registration_of_deadlines(message: Message):
 
 
 async def launch_deadlines(message: Message, lesson: str, paragraph: str, time_delta: timedelta):
-    current_time = datetime.now()
+    current_time = datetime.now(timezone('Europe/Moscow'))
     if paragraph.deadline - time_delta > current_time:
         sleep_time = paragraph.deadline - time_delta - current_time
         await asyncio.sleep(sleep_time.days * 86400 + sleep_time.seconds)
