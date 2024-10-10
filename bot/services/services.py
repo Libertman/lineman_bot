@@ -8,12 +8,10 @@ import asyncio
 
 
 async def registration_of_deadlines(message: Message):
-    tasks = []
     for lesson in deadlines:
         for paragraph in deadlines[lesson]:
             for time_delta in ([21600, 129600] + paragraph.reminder):
-                tasks.append(launch_deadlines(message, lesson, paragraph, timedelta(seconds=time_delta)))
-    await asyncio.gather(*tasks)
+                asyncio.create_task(launch_deadlines(message, lesson, paragraph, timedelta(seconds=time_delta)))
 
 
 async def launch_deadlines(message: Message, lesson: str, paragraph: str, time_delta: timedelta):
@@ -24,11 +22,10 @@ async def launch_deadlines(message: Message, lesson: str, paragraph: str, time_d
         if time_delta.days >= 3:
             await message.answer(text=LEXICON_RU['courses_deadlines']['deadline_far_reminder'].format(lesson, paragraph.name, translate_to_date(time_delta)))
         else:
-            await message.answer(text=LEXICON_RU['courses_deadlines']['deadline_common_reminder'].format(lesson, paragraph.name, get_plural(time_delta.seconds % 86400 // 3600, "ЧАС, ЧАСА, ЧАСОВ")))
+            await message.answer(text=LEXICON_RU['courses_deadlines']['deadline_common_reminder'].format(lesson, paragraph.name, translate_to_date(time_delta)))
     return
 
 def translate_to_date(delta: float):
-    delta = timedelta(seconds=delta)
     hours = delta.seconds % 86400 // 3600
     minutes = delta.seconds % 3600 // 60
     return f'{get_plural(delta.days, "ДЕНЬ, ДНЯ, ДНЕЙ") + " " if delta.days > 0 else ""}' + f'{get_plural(hours, "ЧАС, ЧАСА, ЧАСОВ") + " " if hours > 0 else ""}' + f'{get_plural(minutes, "МИНУТА, МИНУТЫ, МИНУТ") if minutes > 0 else ""}'

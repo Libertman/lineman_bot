@@ -35,10 +35,10 @@ digital_course = InlineKeyboardButton(text='КУРС ПО ЦИФРОВОЙ ГР�
 english_course = InlineKeyboardButton(text='КУРС ПО АНГЛИЙСКОМУ', url="https://dl-hum.spbstu.ru/course/view.php?id=11111")
 
 # url answers buttons
-pe_answer = InlineKeyboardButton(text='ОТВЕТЫ НА КУРС', url='https://polyphis.ru/physical_education')
-economics_answer = InlineKeyboardButton(text='ОТВЕТЫ НА КУРС', url='https://polyphis.ru/economic')
+pe_answer = InlineKeyboardButton(text='ОТВЕТЫ НА КУРС', url='https://polyvsp.ru/fizra/')
+economics_answer = InlineKeyboardButton(text='ОТВЕТЫ НА КУРС', url='https://polyvsp.ru/economkult/')
 russia_answer = InlineKeyboardButton(text='ОТВЕТЫ НА КУРС', url='https://vk.com/topic-192577485_49440811')
-digital_answer = InlineKeyboardButton(text='ОТВЕТЫ НА КУРС', url='https://polyphis.ru/digital_literacy')
+digital_answer = InlineKeyboardButton(text='ОТВЕТЫ НА КУРС', url='https://polyvsp.ru/cifgram/')
 english_answer = InlineKeyboardButton(text='ОТВЕТЫ НА КУРС', url='https://polyphis.ru/english_scr')
 
 # ---------------KEYBOARDS---------------

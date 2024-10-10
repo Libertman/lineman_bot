@@ -6,9 +6,8 @@ from services.services import registration_of_deadlines
 from keyboards.keyboards import functions_keyboard, help_start_keyboard, subjects_keyboard, pe_keyboard, economics_keyboard, russia_keyboard, digital_keyboard, english_keyboard
 from database.database import deadlines, nearest_list_deadlines
 from services.services import translate_to_date
-from datetime import datetime
-from database.sql import get_user, update_user
-from pytz import timezone
+from datetime import datetime, timedelta, timezone
+from database.sql import update_data, get_user
 import logging
 
 
@@ -21,18 +20,6 @@ logging.basicConfig(level=logging.DEBUG, format='{filename}:{lineno} #{levelname
 @router.message(CommandStart())
 async def process_start_command(message: Message):
     await message.answer(LEXICON_RU['/start'], reply_markup=help_start_keyboard)
-    if message.chat.type == 'private':
-        flag = get_user(user_id=message.from_user.id)['flag']
-        logger.debug(datetime.now())
-        if not flag:
-            update_user(user_id=message.from_user.id, flag=1)
-            await registration_of_deadlines(message)
-    else:
-        flag = get_user(user_id=message.chat.id)['flag']
-        logger.debug(flag)
-        if not flag:
-            update_user(user_id=message.chat.id, flag=1)
-            await registration_of_deadlines(message)
 
 
 @router.message(or_f(F.text == 'Помощь', F.text == 'ПОМОГИТЕ'))
@@ -50,7 +37,7 @@ async def process_nearest_deadlines_command(message: Message):
     imp_index = 3
     while imp_index < len(nearest_list_deadlines) and nearest_list_deadlines[imp_index-1].deadline == nearest_list_deadlines[imp_index].deadline:
         imp_index += 1
-    return_deadlines = "\n".join([f"{ind}) <b>{deadline.subject}</b>: {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline.timestamp() - int(datetime.now(timezone('Europe/Moscow')).timestamp()))}" for ind, deadline in enumerate(nearest_list_deadlines[:imp_index], 1)])
+    return_deadlines = "\n".join([f"{ind}) <b>{deadline.subject}</b>: {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline - datetime.now(tz=timezone(timedelta(hours=3))))}" for ind, deadline in enumerate(nearest_list_deadlines[:imp_index], 1)])
     return_text = f'<b>БЛИЖАЙШИЕ ДЕДЛАЙНЫ</b>\n\n{return_deadlines}'
     return_text += '\n\n...' if imp_index < len(nearest_list_deadlines) else ''
     await message.answer(return_text, reply_markup=functions_keyboard)
@@ -63,36 +50,36 @@ async def process_authors_command(message: Message):
 
 @router.callback_query(F.data == 'pe')
 async def process_pe_subject(callback: CallbackQuery):
-    current_time = int(datetime.now(timezone('Europe/Moscow')).timestamp())
-    all_deadlines = '\n'.join([f"{index}) {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline.timestamp() - current_time)}\n" for index, deadline in enumerate(filter(lambda x: x.deadline.timestamp() > current_time, deadlines['Физическая культура']), 1)])
+    current_time = datetime.now(tz=timezone(timedelta(hours=3)))
+    all_deadlines = '\n'.join([f"{index}) {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline - current_time)}\n" for index, deadline in enumerate(filter(lambda x: x.deadline > current_time, deadlines['Физическая культура']), 1)])
     await callback.message.edit_text(text=LEXICON_RU['pe_description'].format(all_deadlines), reply_markup=pe_keyboard)
 
 
 @router.callback_query(F.data == 'economics')
 async def process_economics_subject(callback: CallbackQuery):
-    current_time = int(datetime.now(timezone('Europe/Moscow')).timestamp())
-    all_deadlines = '\n'.join([f"{index}) {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline.timestamp() - current_time)}\n" for index, deadline in enumerate(filter(lambda x: x.deadline.timestamp() > current_time, deadlines['Экономическая культура']), 1)])
+    current_time = datetime.now(tz=timezone(timedelta(hours=3)))
+    all_deadlines = '\n'.join([f"{index}) {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline - current_time)}\n" for index, deadline in enumerate(filter(lambda x: x.deadline > current_time, deadlines['Экономическая культура']), 1)])
     await callback.message.edit_text(text=LEXICON_RU['economics_description'].format(all_deadlines), reply_markup=economics_keyboard)
 
 
 @router.callback_query(F.data == 'digital')
 async def process_digital_subject(callback: CallbackQuery):
-    current_time = int(datetime.now(timezone('Europe/Moscow')).timestamp())
-    all_deadlines = '\n'.join([f"{index}) {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline.timestamp() - current_time)}\n" for index, deadline in enumerate(filter(lambda x: x.deadline.timestamp() > current_time, deadlines['Цифровая грамотность']), 1)])
+    current_time = datetime.now(tz=timezone(timedelta(hours=3)))
+    all_deadlines = '\n'.join([f"{index}) {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline - current_time)}\n" for index, deadline in enumerate(filter(lambda x: x.deadline > current_time, deadlines['Цифровая грамотность']), 1)])
     await callback.message.edit_text(text=LEXICON_RU['digital_description'].format(all_deadlines), reply_markup=digital_keyboard)
 
 
 @router.callback_query(F.data == 'english')
 async def process_english_subject(callback: CallbackQuery):
-    current_time = int(datetime.now(timezone('Europe/Moscow')).timestamp())
-    all_deadlines = '\n'.join([f"{index}) {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline.timestamp() - current_time)}\n" for index, deadline in enumerate(filter(lambda x: x.deadline.timestamp() > current_time, deadlines['Английский язык']), 1)])
+    current_time = datetime.now(tz=timezone(timedelta(hours=3)))
+    all_deadlines = '\n'.join([f"{index}) {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline - current_time)}\n" for index, deadline in enumerate(filter(lambda x: x.deadline > current_time, deadlines['Английский язык']), 1)])
     await callback.message.edit_text(text=LEXICON_RU['english_description'].format(all_deadlines), reply_markup=english_keyboard)
 
 
 @router.callback_query(F.data == 'russia')
 async def process_russia_subject(callback: CallbackQuery):
-    current_time = int(datetime.now(timezone('Europe/Moscow')).timestamp())
-    all_deadlines = '\n'.join([f"{index}) {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline.timestamp() - current_time)}\n" for index, deadline in enumerate(filter(lambda x: x.deadline.timestamp() > current_time, deadlines['Россия: государственное основание и мировоззрение']), 1)])
+    current_time = datetime.now(tz=timezone(timedelta(hours=3)))
+    all_deadlines = '\n'.join([f"{index}) {deadline.name} -> <b>{deadline.deadline.strftime('%d.%m.%y')}</b>\nОсталось: {translate_to_date(deadline.deadline - current_time)}\n" for index, deadline in enumerate(filter(lambda x: x.deadline > current_time, deadlines['Россия: государственное основание и мировоззрение']), 1)])
     await callback.message.edit_text(text=LEXICON_RU['russia_description'].format(all_deadlines), reply_markup=russia_keyboard)
 
 
