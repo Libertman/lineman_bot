@@ -45,8 +45,3 @@ deadlines = {'Физическая культура':
              [Deadline(name='Тест по модулю 1', deadline=datetime(2024, 10, 8, tzinfo=timezone(timedelta(hours=3))), subject='Английский язык'),
               Deadline(name='Монолог по модулю 1 "Personality"', deadline=datetime(2024, 10, 15, tzinfo=timezone(timedelta(hours=3))), reminder=[280800], subject='Английский язык'),
               Deadline(name='Тест по модулю 2', deadline=datetime(2024, 10, 22, tzinfo=timezone(timedelta(hours=3))), subject='Английский язык')]}
-
-
-
-
-nearest_list_deadlines = list(dropwhile(lambda x: x.deadline <= datetime.now(tz=timezone(timedelta(hours=3))), sorted(reduce(lambda x, y: x + y, [values for values in deadlines.values()]),key=lambda x: x.deadline)))

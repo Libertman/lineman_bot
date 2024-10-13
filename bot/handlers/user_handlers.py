@@ -4,10 +4,12 @@ from aiogram.filters import Command, CommandStart, or_f
 from lexicon.lexicon_ru import LEXICON_RU
 from services.services import registration_of_deadlines
 from keyboards.keyboards import functions_keyboard, help_start_keyboard, subjects_keyboard, pe_keyboard, economics_keyboard, russia_keyboard, digital_keyboard, english_keyboard
-from database.database import deadlines, nearest_list_deadlines
+from database.database import deadlines
 from services.services import translate_to_date
 from datetime import datetime, timedelta, timezone
 from database.sql import update_data, get_user
+from functools import reduce
+from itertools import dropwhile
 import logging
 
 
@@ -34,6 +36,7 @@ async def process_show_subjects_deadlines(message: Message):
 
 @router.message(F.text == 'БЛИЖАЙШИЕ ДЕДЛАЙНЫ')
 async def process_nearest_deadlines_command(message: Message):
+    nearest_list_deadlines = list(dropwhile(lambda x: x.deadline <= datetime.now(tz=timezone(timedelta(hours=3))), sorted(reduce(lambda x, y: x + y, [values for values in deadlines.values()]),key=lambda x: x.deadline)))
     imp_index = 3
     while imp_index < len(nearest_list_deadlines) and nearest_list_deadlines[imp_index-1].deadline == nearest_list_deadlines[imp_index].deadline:
         imp_index += 1
