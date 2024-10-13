@@ -7,8 +7,6 @@ services:
     restart: on-failure
     volumes:
      - ./bot:/bot
-    depends_on:
-     - postgres_main
 
   postgres_main:
     image: postgres:16.2

@@ -7,18 +7,18 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 # COMMON BUTTONS
 
 # main buttons
-nearest_button = KeyboardButton(text='БЛИЖАЙШИЕ ДЕДЛАЙНЫ')
-subjects_button = KeyboardButton(text='ДЕДЛАЙНЫ ПО ПРЕДМЕТАМ')
-help_button = KeyboardButton(text='Помощь')
-authors_button = KeyboardButton(text='Создатели')
+nearest_button = KeyboardButton(text='⏳БЛИЖАЙШИЕ ДЕДЛАЙНЫ⏳')
+subjects_button = KeyboardButton(text='📚ДЕДЛАЙНЫ ПО ПРЕДМЕТАМ📚')
+help_button = KeyboardButton(text='⚙️Помощь⚙️')
+authors_button = KeyboardButton(text='👨🏻‍💻Создатели👨🏻‍💻')
 
 # help button
-help_start_button = KeyboardButton(text='ПОМОГИТЕ')
+help_start_button = KeyboardButton(text='🙏🏻ПОМОГИТЕ🙏🏻')
 
 # INLINE BUTTONS
 
 # cancel button
-cancel_button = InlineKeyboardButton(text='Назад', callback_data='cancel')
+cancel_button = InlineKeyboardButton(text='⬅️НАЗАД', callback_data='cancel')
 
 # subject buttons
 pe_button = InlineKeyboardButton(text='⚽️Физическая культура⚽️', callback_data='pe')
