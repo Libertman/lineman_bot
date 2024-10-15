@@ -1,4 +1,3 @@
-from environs import Env
 from sqlalchemy import Integer, BigInteger, String, select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -13,6 +12,7 @@ class Base(DeclarativeBase):
     pass
 
 metadata = Base.metadata
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -32,6 +32,7 @@ async def insert_new_user(user_id: int, username: str, fullname: str = None):
             session.add(new_user)
             await session.commit()
 
+
 async def update_data(user_id: int, flag: int = 0, username: str = None, fullname: str = None):
     async with session_marker() as session:
         query = await session.execute(select(User).filter(User.id == user_id))
@@ -44,6 +45,7 @@ async def update_data(user_id: int, flag: int = 0, username: str = None, fullnam
             needed_data.flag = 1
         await session.commit()
 
+
 async def get_user(user_id: int):
     async with session_marker() as session:
         query = await session.execute(select(User).filter(User.id == user_id))
@@ -55,7 +57,6 @@ async def get_user(user_id: int):
 
 async def init_models():
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
 # env = Env()

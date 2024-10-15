@@ -5,6 +5,8 @@ services:
     env_file:
      - env/main.env
     restart: on-failure
+    depends_on:
+      - postgres_main
     volumes:
      - ./bot:/bot
 

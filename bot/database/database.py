@@ -1,8 +1,5 @@
 from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass, field
-from functools import reduce
-from itertools import dropwhile
-
 
 
 @dataclass
