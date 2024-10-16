@@ -18,6 +18,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - 5432:5432
+    restart: on-failure
 
   pgadmin:
     image: dpage/pgadmin4

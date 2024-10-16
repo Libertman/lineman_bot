@@ -41,4 +41,5 @@ deadlines = {'Физическая культура':
              'Английский язык':
              [Deadline(name='Тест по модулю 1', deadline=datetime(2024, 10, 8, tzinfo=timezone(timedelta(hours=3))), subject='Английский язык'),
               Deadline(name='Монолог по модулю 1 "Personality"', deadline=datetime(2024, 10, 15, tzinfo=timezone(timedelta(hours=3))), reminder=[280800], subject='Английский язык'),
-              Deadline(name='Тест по модулю 2', deadline=datetime(2024, 10, 22, tzinfo=timezone(timedelta(hours=3))), subject='Английский язык')]}
+              Deadline(name='Тест по модулю 2', deadline=datetime(2024, 10, 22, tzinfo=timezone(timedelta(hours=3))), subject='Английский язык'),
+              Deadline(name='Монолог по модулю 2 "Travel"', deadline=datetime(2024, 11, 6, tzinfo=timezone(timedelta(hours=3))), subject='Английский язык')]}
