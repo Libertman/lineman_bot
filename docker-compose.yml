@@ -20,6 +20,13 @@ services:
       - 5432:5432
     restart: on-failure
 
+  redis_FSM:
+    image: redis:5.0
+    command: redis-server --appendonly yes
+    restart: always
+    volumes:
+      - redis_data:/data
+
   pgadmin:
     image: dpage/pgadmin4
     environment:
@@ -36,4 +43,5 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   pgadmin:

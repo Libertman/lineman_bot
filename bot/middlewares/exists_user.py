@@ -1,6 +1,5 @@
 from aiogram import BaseMiddleware
 from database.sql import get_user, insert_new_user, update_data
-from services.services import registration_of_deadlines
 import logging
 import asyncio
 
@@ -38,13 +37,13 @@ class ExistsUserMiddleware(BaseMiddleware):
 
         if user is None:
             await insert_new_user(user_id, username, fullname)
-            if event.message:
-                await registration_of_deadlines(event.message)
-                await update_data(user_id, flag=1)
+            # if event.message:
+                # await registration_of_deadlines(event.message)
+                # await update_data(user_id, flag=1)
             return await handler(event, data)
         elif 'event_from_user' in data and (username != user[1] or fullname != user[2]):
             await update_data(user_id, username=username, fullname=fullname)
-        if not user[3] and event.message:
-            asyncio.create_task(registration_of_deadlines(event.message))
-            await update_data(user_id, flag=1)
+        # if not user[3] and event.message:
+        #     # asyncio.create_task(registration_of_deadlines(event.message))
+        #     await update_data(user_id, flag=1)
         return await handler(event, data)
