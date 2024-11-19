@@ -4,6 +4,7 @@ from lexicon.lexicon_ru import LEXICON_RU
 
 # ---------------BUTTONS---------------
 
+
 # COMMON BUTTONS
 
 # main buttons
@@ -69,7 +70,12 @@ russia_add = InlineKeyboardButton(text='Россия: гос. осн. и мир�
 digital_add = InlineKeyboardButton(text='Цифровая грамотность', callback_data='digital_add')
 english_add  = InlineKeyboardButton(text='Английский язык', callback_data='english_add')
 
+# check user have already done his task
+already_done_task = InlineKeyboardButton(text='✅УЖЕ СДЕЛАЛ✅', callback_data='already_done')
+
+
 # ---------------KEYBOARDS---------------
+
 
 # COMMON KEYBOARDS
 
@@ -153,6 +159,10 @@ add_subject_keyboard = InlineKeyboardMarkup(
                      [digital_add],
                      [english_add],
                      [cancel_template]]
+)
+
+check_already_done = InlineKeyboardMarkup(
+    inline_keyboard=[[already_done_task]]
 )
 
 

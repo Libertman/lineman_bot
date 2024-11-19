@@ -6,6 +6,7 @@ from config_data.config import settings
 from datetime import datetime, timedelta
 from lexicon.lexicon_ru import LEXICON_RU
 from services.services import translate_to_date
+from keyboards.keyboards import check_already_done
 import enum
 import logging
 import asyncio
@@ -49,11 +50,9 @@ class Deadline(Base):
     reminders: Mapped[ARRAY] = mapped_column(ARRAY(Integer))
     deadline_type: Mapped[DeadlineType] = mapped_column()
 
-    # subject_id: Mapped[int] = mapped_column(Integer, ForeignKey('Subjects.index'), nullable=True)
     user_index: Mapped[int] = mapped_column(BigInteger, ForeignKey('Users.index'))
 
     Users: Mapped['User'] = relationship('User', back_populates='Deadlines')
-    # Subjects: Mapped['Subject'] = relationship('Subject', back_populates='Deadlines')
 
 
 class Subject(Base):
@@ -63,8 +62,6 @@ class Subject(Base):
     title: Mapped[str] = mapped_column(String(300))
     date: Mapped[DateTime] = mapped_column(DateTime)
     reminders: Mapped[ARRAY] = mapped_column(ARRAY(Integer))
-
-    # Deadlines: Mapped[list['Deadline']] = relationship('Deadline', back_populates='Subjects')
 
 
 async def insert_new_user(u_id: int, username: str, fullname: str = None):
@@ -196,18 +193,18 @@ async def check_deadlines(bot):
                 for user in users:
                     if deadline.deadline_type == DeadlineType.SUBJECT:
                         if deadline.reminders[-1] >= 108000:
-                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['courses_deadlines']['deadline_far_reminder'].format(LEXICON_RU['courses_linkers'][deadline.subject_name]['course'], deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1])), LEXICON_RU['courses_linkers'][deadline.subject_name]['answers']))
+                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['courses_deadlines']['deadline_far_reminder'].format(LEXICON_RU['courses_linkers'][deadline.subject_name]['course'], deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1])), LEXICON_RU['courses_linkers'][deadline.subject_name]['answers']), reply_markup=check_already_done, disable_web_page_preview=True)
                         elif deadline.reminders[-1] >= 21600:
-                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['courses_deadlines']['deadline_common_reminder'].format(LEXICON_RU['courses_linkers'][deadline.subject_name]['course'], deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1])), LEXICON_RU['courses_linkers'][deadline.subject_name]['answers']))
+                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['courses_deadlines']['deadline_common_reminder'].format(LEXICON_RU['courses_linkers'][deadline.subject_name]['course'], deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1])), LEXICON_RU['courses_linkers'][deadline.subject_name]['answers']), reply_markup=check_already_done, disable_web_page_preview=True)
                         else:
-                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['courses_deadlines']['deadline_emergency_reminder'].format(LEXICON_RU['courses_linkers'][deadline.subject_name]['course'], deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1])), LEXICON_RU['courses_linkers'][deadline.subject_name]['answers']))
+                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['courses_deadlines']['deadline_emergency_reminder'].format(LEXICON_RU['courses_linkers'][deadline.subject_name]['course'], deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1])), LEXICON_RU['courses_linkers'][deadline.subject_name]['answers']), reply_markup=check_already_done, disable_web_page_preview=True)
                     else:
                         if deadline.reminders[-1] >= 108000:
-                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['users_deadlines']['deadline_far_reminder'].format(deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1]))))
+                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['users_deadlines']['deadline_far_reminder'].format(deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1]))), reply_markup=check_already_done, disable_web_page_preview=True)
                         elif deadline.reminders[-1] >= 7200:
-                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['users_deadlines']['deadline_common_reminder'].format(deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1]))))
+                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['users_deadlines']['deadline_common_reminder'].format(deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1]))), reply_markup=check_already_done, disable_web_page_preview=True)
                         else:
-                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['users_deadlines']['deadline_emergency_reminder'].format(deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1]))))
+                            await bot.send_message(chat_id=user.id, text=LEXICON_RU['users_deadlines']['deadline_emergency_reminder'].format(deadline.subject_name, deadline.title, translate_to_date(timedelta(seconds=deadline.reminders[-1]))), reply_markup=check_already_done, disable_web_page_preview=True)
                 change_reminders = await session.execute(select(Deadline).filter(Deadline.index == deadline.index))
                 need_to_change = change_reminders.scalar()
                 need_to_change.reminders = need_to_change.reminders[:-1]
@@ -243,3 +240,20 @@ async def add_user_base(data: dict):
             deadline.reminders = list(filter(lambda x: deadline.date - timedelta(seconds=x) > now, deadline.reminders))
             session.add(Deadline(subject_name=deadline.name, title=deadline.title, date=deadline.date, reminders=deadline.reminders, deadline_type=DeadlineType.SUBJECT, user_index=user_data.index))
         await session.commit()
+
+
+async def delete_completed_task(title: str, user_id: int, subject_name: str = None):
+    now = datetime.now() + timedelta(hours=3)
+    async with session_marker() as session:
+        user_query = await session.execute(select(User).filter(User.id == user_id))
+        user_data = user_query.scalar()
+        if subject_name:
+            deadline_query = await session.execute(select(Deadline).filter(Deadline.subject_name == subject_name, Deadline.title == title, Deadline.user_index == user_data.index))
+        else:
+            deadline_query = await session.execute(select(Deadline).filter(Deadline.title == title, Deadline.user_index == user_data.index, Deadline.subject_name.is_(None)))
+        deadline_data = deadline_query.scalar()
+        if not deadline_data or deadline_data.date < now:
+            return False
+        await session.execute(delete(Deadline).filter(Deadline.index == deadline_data.index))
+        await session.commit()
+        return True

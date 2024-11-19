@@ -4,7 +4,7 @@ from aiogram.filters import CommandStart, or_f, StateFilter
 from aiogram.fsm.state import default_state
 from lexicon.lexicon_ru import LEXICON_RU
 from keyboards.keyboards import functions_keyboard, help_start_keyboard, subjects_keyboard, pe_keyboard, economics_keyboard, russia_keyboard, digital_keyboard, english_keyboard
-from database.sql import get_user_deadlines, get_subject_deadlines
+from database.sql import get_user_deadlines, get_subject_deadlines, delete_completed_task
 from services.services import translate_to_date
 from datetime import datetime, timedelta
 import logging
@@ -92,6 +92,19 @@ async def process_russia_subject(callback: CallbackQuery):
 @router.callback_query(F.data == 'cancel')
 async def process_cancel_press(callback: CallbackQuery):
     await callback.message.edit_text(text="Выберите предмет", reply_markup=subjects_keyboard)
+
+
+@router.callback_query(F.data == 'already_done')
+async def process_already_done_button(callback_query: CallbackQuery):
+    message = callback_query.message.text
+    if 'ДО ТВОЕГО СОБЫТИЯ' not in message:
+        subject_name = message[message.index('ПО КУРСУ')+10:message.index('ТЕМА')-1]
+        title = message[message.index('ТЕМА')+6:message.index('ОСТАЛОСЬ')-1]
+        if not await delete_completed_task(title, callback_query.from_user.id, subject_name):
+            await callback_query.answer(text='Дедлайн истек, так что меня не особо волнует сделал ты задание или нет🙃', show_alert=True)
+    else:
+        ...
+    await callback_query.message.delete()
 
 
 @router.message(F.photo)
