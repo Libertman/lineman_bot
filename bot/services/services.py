@@ -91,3 +91,15 @@ async def auto_delete_message(bot, chat_id: int, message_id: int, state: FSMCont
                 break
         else:
             break
+
+
+def keyboard2list(keyboard):
+    return [
+        [
+            {
+                "text": btn.text,
+                "callback_data": btn.callback_data,
+                "url": btn.url,
+            } for btn in row
+        ] for row in keyboard.inline_keyboard
+        ]

@@ -1,6 +1,11 @@
 from aiogram import BaseMiddleware
-from database.sql import get_user, insert_new_user, update_data
+from aiogram.types import Message
+from database.sql import get_user, update_data
+from states.states import FSMRegistrationUser
+from keyboards.keyboards import generate_choice_subjects
+from services.services import auto_delete_message
 import logging
+import time
 
 
 logger = logging.getLogger(__name__)
@@ -35,8 +40,14 @@ class ExistsUserMiddleware(BaseMiddleware):
         user_id = this_user.id
 
         if user is None:
-            await insert_new_user(user_id, username, fullname)
+            if ((event.message and event.message.text not in ('/start', '🙏🏻ПОМОГИТЕ🙏🏻')) or event.callback_query) and not(await data['state'].get_state() == FSMRegistrationUser.waiting_for_subjects.state):
+                await data['state'].set_state(FSMRegistrationUser.waiting_for_subjects)
+                if not (await data['state'].get_data()).get('last_interaction'):
+                    bot_message = await data['bot'].send_message(chat_id=data['event_context'].chat.id, text='📝Вам необходимо пройти небольшую регистрацию📝\n\n📚Выберите предметы, по которым вы хотите получать напоминания о дедлайнах', reply_markup=generate_choice_subjects([]))
+                    await data['state'].update_data(selected_subjects=[], message_id=bot_message.message_id, last_interaction=int(time.time()))
+                    await auto_delete_message(data['bot'], user_id, bot_message.message_id, data['state'], 300)
+                    return
             return await handler(event, data)
-        elif 'event_from_user' in data and (username != user[1] or fullname != user[2]):
+        elif 'event_from_user' in data and (username != user['username'] or fullname != user['fullname']):
             await update_data(user_id, username=username, fullname=fullname)
         return await handler(event, data)

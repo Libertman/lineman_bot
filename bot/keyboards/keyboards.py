@@ -10,7 +10,10 @@ from lexicon.lexicon_ru import LEXICON_RU
 # main buttons
 nearest_button = KeyboardButton(text='⏳БЛИЖАЙШИЕ ДЕДЛАЙНЫ⏳')
 subjects_button = KeyboardButton(text='📚ДЕДЛАЙНЫ ПО ПРЕДМЕТАМ📚')
+add_user_deadline_button = KeyboardButton(text='🎯ДОБАВИТЬ СОБСТВЕННЫЙ ДЕДЛАЙН🎯')
+user_deadlines_button = KeyboardButton(text='👑СВОИ ДЕДЛАЙНЫ👑')
 help_button = KeyboardButton(text='⚙️Помощь⚙️')
+account_button = KeyboardButton(text='🐵АККАУНТ🐵')
 authors_button = KeyboardButton(text='👨🏻‍💻Создатели👨🏻‍💻')
 
 # help button
@@ -63,15 +66,18 @@ continue_adding = InlineKeyboardButton(text='✅ ДА ✅', callback_data='conti
 # fix reminder
 fix_reminder = InlineKeyboardButton(text='🔧ИЗМЕНИТЬ НАПОМИНАНИЕ🔧', callback_data='fix_reminder')
 
-# select subject for add deadline
+# select subject
 pe_add = InlineKeyboardButton(text='Физическая культура', callback_data='pe_add')
 economics_add = InlineKeyboardButton(text='Экономическая культура', callback_data='economics_add')
 russia_add = InlineKeyboardButton(text='Россия: гос. осн. и мировоззрение', callback_data='russia_add')
 digital_add = InlineKeyboardButton(text='Цифровая грамотность', callback_data='digital_add')
 english_add  = InlineKeyboardButton(text='Английский язык', callback_data='english_add')
 
-# check user have already done his task
-already_done_task = InlineKeyboardButton(text='✅УЖЕ СДЕЛАЛ✅', callback_data='already_done')
+# back user deadline
+back_user_deadline = InlineKeyboardButton(text='⬅️НАЗАД', callback_data='us_dead_back')
+
+# change list of subjects
+change_subjects = InlineKeyboardButton(text='🔧ИЗМЕНИТЬ ДОБАВЛЕННЫЕ КУРСЫ🔧', callback_data='change_subjects')
 
 
 # ---------------KEYBOARDS---------------
@@ -82,6 +88,8 @@ already_done_task = InlineKeyboardButton(text='✅УЖЕ СДЕЛАЛ✅', callb
 functions_keyboard = ReplyKeyboardMarkup(
     keyboard=[[nearest_button],
               [subjects_button],
+              [add_user_deadline_button],
+              [user_deadlines_button, account_button],
               [help_button, authors_button]],
     resize_keyboard=True
 )
@@ -161,13 +169,47 @@ add_subject_keyboard = InlineKeyboardMarkup(
                      [cancel_template]]
 )
 
-check_already_done = InlineKeyboardMarkup(
-    inline_keyboard=[[already_done_task]]
+change_subjects_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[[change_subjects]]
 )
 
 
-def generate_choice_subjects(subjects: list, selected_subjects: list):
+def generate_choice_subjects(selected_subjects: list):
+    subjects = ['Физическая культура', 'Экономическая культура', 'Россия: гос. осн. и мировоззрение', 'Цифровая грамотность', 'Английский язык']
     callback_subjects = ['pe_choice', 'economics_choice', 'russia_choice', 'digital_choice', 'english_choice']
+    add_buttons = [[InlineKeyboardButton(text='• ПОДТВЕРДИТЬ •', callback_data='confirm_choice_subjects')]]
+    add_buttons += [[cancel_template]]
     return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text=f'✅{subject}✅' if callback_subject in selected_subjects else subject, callback_data=callback_subject)] for subject, callback_subject in zip(subjects, callback_subjects)] + [[InlineKeyboardButton(text='• ПОДТВЕРДИТЬ •', callback_data='confirm_choice_subjects')], [cancel_template]]
+        inline_keyboard=[[InlineKeyboardButton(text=f'✅{subject}✅' if callback_subject in selected_subjects else subject, callback_data=callback_subject)] for subject, callback_subject in zip(subjects, callback_subjects)] + add_buttons
+    )
+
+
+def generate_subjects_deadlines(subjects: list):
+    subject_names = ['⚽️Физическая культура⚽️', '🤑Экономическая культура🤑', '🇷🇺Россия: гос. осн. и мировоззрение🇷🇺', '💻Цифровая грамотность💻', '🇺🇸Английский язык🇺🇸']
+    subject_callbacks = ['pe', 'economics', 'russia', 'digital', 'english']
+    for index, check_subject in enumerate(['Физическая культура', 'Экономическая культура', 'Россия: гос. осн. и мировоззрение', 'Цифровая грамотность', 'Английский язык']):
+        if check_subject not in subjects:
+            subject_names[index] = ''
+            subject_callbacks[index] = ''
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text=subject_name, callback_data=subject_callback)] for subject_name, subject_callback in zip(subject_names, subject_callbacks) if subject_name]
+    )
+
+
+def generate_user_deadlines(deadlines: list):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text=f'{deadline["deadline"].strftime("%Y.%m.%d")}: {deadline["title"]}', callback_data=f'{deadline["index"]}us_dead')] for deadline in deadlines]
+    )
+
+
+def generate_manage_user_deadline(index: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text='✂️УДАЛИТЬ ДЕДЛАЙН✂️', callback_data=f'{index}us_dead_del')],
+                         [back_user_deadline]]
+    )
+
+
+def generate_check_already_done(index: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text='✅УЖЕ СДЕЛАЛ✅', callback_data=f'{index}already_done')]]
     )

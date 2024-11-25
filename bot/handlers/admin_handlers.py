@@ -28,28 +28,28 @@ template_message_info = {'need_to_delete': [], 'subjects': ['Физическа�
 # --------------------- ADD DEADLINE BY ADMIN ---------------------
 
 
-@admin_router.message(F.from_user.id.in_(admin_ids), or_f(Command(commands='add_deadline'), Command(commands='add_user')), StateFilter(FSMAdminAddDeadline.filling_deadline_info))
+@admin_router.message(F.chat.id.in_(admin_ids), or_f(Command(commands='add_deadline'), Command(commands='add_user')), StateFilter(FSMAdminAddDeadline.filling_deadline_info))
 async def process_fake_deadline_start(message: Message, state: FSMContext):
     data = await state.get_data()
     bot_message = await message.answer('❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового дедлайна от имени администратора. Вы хотите продолжить заполнение?', reply_markup=check_continue_keyboard)
     try:
-        await bot_message.bot.delete_message(chat_id=message.from_user.id, message_id=data.get('template_id'))
+        await bot_message.bot.delete_message(chat_id=message.chat.id, message_id=data.get('template_id'))
     except TelegramBadRequest:
         pass
-    await state.update_data(template_id=bot_message.message_id, last_interaction=int(time.time()), template='❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового дедлайна от имени администратора. Вы хотите продолжить заполнение?')
-    await auto_delete_message(message.bot, message.from_user.id, bot_message.message_id, state, 300)
+    await state.update_data(template_id=bot_message.message_id, last_interaction=int(time.time()), template=None)
+    await auto_delete_message(message.bot, message.chat.id, bot_message.message_id, state, 300)
 
 
-@admin_router.message(F.from_user.id.in_(admin_ids), Command(commands='add_deadline'), StateFilter(default_state))
+@admin_router.message(F.chat.id.in_(admin_ids), Command(commands='add_deadline'), StateFilter(default_state))
 async def process_add_deadline_start(message: Message, state: FSMContext):
     template_message = await message.answer('Выберите предмет, для которого нужно добавить дедлайн', reply_markup=add_subject_keyboard)
     question_types = {'subject_name': 'str', 'lesson_name': 'str', 'deadline_year': 'int', 'deadline_month': 'int', 'deadline_day': 'int', 'deadline_hour': 'int', 'deadline_minute': 'int'}
-    await state.update_data(template='Выберите предмет, для которого нужно добавить дедлайн', template_id=template_message.message_id, question_types=question_types, question_index=0, history=['Выберите предмет, для которого нужно добавить дедлайн'], result_data=[], last_interaction=int(time.time()))
+    await state.update_data(template=None, template_id=template_message.message_id, question_types=question_types, question_index=0, history=['Выберите предмет, для которого нужно добавить дедлайн'], result_data=[], last_interaction=int(time.time()))
     await state.set_state(FSMAdminAddDeadline.filling_deadline_info)
-    await auto_delete_message(message.bot, message.from_user.id, template_message.message_id, state, 300)
+    await auto_delete_message(message.bot, message.chat.id, template_message.message_id, state, 300)
 
 
-@admin_router.message(F.from_user.id.in_(admin_ids), StateFilter(FSMAdminAddDeadline.filling_deadline_info))
+@admin_router.message(F.chat.id.in_(admin_ids), StateFilter(FSMAdminAddDeadline.filling_deadline_info))
 async def process_handle_add_deadline_answer(message: Message, state: FSMContext):
     data = await state.get_data()
     template_message_id = data.get('template_id')
@@ -57,23 +57,23 @@ async def process_handle_add_deadline_answer(message: Message, state: FSMContext
     if template_message_info['need_to_delete']:
         for m_id in template_message_info['need_to_delete']:
             try:
-                await message.bot.delete_message(chat_id=message.from_user.id, message_id=m_id)
+                await message.bot.delete_message(chat_id=message.chat.id, message_id=m_id)
             except TelegramBadRequest:
                 pass
         template_message_info['need_to_delete'].clear()
     if not data.get('last_interaction'):
         await message.delete()
         bot_message = await message.answer('❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового дедлайна от имени администратора. Вы хотите продолжить заполнение?', reply_markup=check_continue_keyboard)
-        await state.update_data(template_id=bot_message.message_id, last_interaction=int(time.time()), template='❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового дедлайна от имени администратора. Вы хотите продолжить заполнение?')
-        await auto_delete_message(message.bot, message.from_user.id, bot_message.message_id, state, 300)
+        await state.update_data(template_id=bot_message.message_id, last_interaction=int(time.time()), template=None)
+        await auto_delete_message(message.bot, message.chat.id, bot_message.message_id, state, 300)
         return
-    if not template.startswith('<i><b>ДОБАВЛЕНИЕ ДЕДЛАЙНА КУРСА</b> от имени администратора</i>'):
+    if not template:
         await message.delete()
         return
-    if message.text in ('⏳БЛИЖАЙШИЕ ДЕДЛАЙНЫ⏳', '📚ДЕДЛАЙНЫ ПО ПРЕДМЕТАМ📚', '⚙️Помощь⚙️', '👨🏻‍💻Создатели👨🏻‍💻'):
+    if message.text in ('⏳БЛИЖАЙШИЕ ДЕДЛАЙНЫ⏳', '📚ДЕДЛАЙНЫ ПО ПРЕДМЕТАМ📚', '⚙️Помощь⚙️', '👨🏻‍💻Создатели👨🏻‍💻', '🎯ДОБАВИТЬ СОБСТВЕННЫЙ ДЕДЛАЙН🎯', '👑СВОИ ДЕДЛАЙНЫ👑', '🐵АККАУНТ🐵'):
         await message.delete()
-        bot_message = await message.bot.edit_message_text(chat_id=message.from_user.id, message_id=template_message_id, text='❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового дедлайна от имени администратора. Вы хотите продолжить заполнение?', reply_markup=check_continue_keyboard)
-        await state.update_data(last_interaction=int(time.time()), template='❗️Вы <b><u>не завершили</u></b> прошлое заполнение от имени администратора. Вы хотите продолжить заполнение?')
+        bot_message = await message.bot.edit_message_text(chat_id=message.chat.id, message_id=template_message_id, text='❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового дедлайна от имени администратора. Вы хотите продолжить заполнение?', reply_markup=check_continue_keyboard)
+        await state.update_data(last_interaction=int(time.time()), template=None)
         return
 
     user_input = message.text
@@ -105,7 +105,7 @@ async def process_handle_add_deadline_answer(message: Message, state: FSMContext
     new_template = template.replace('❓', user_input, 1)
 
     await message.delete()
-    await message.bot.edit_message_text(chat_id=message.from_user.id, message_id=template_message_id, text=new_template, reply_markup=add_keyboard)
+    await message.bot.edit_message_text(chat_id=message.chat.id, message_id=template_message_id, text=new_template, reply_markup=add_keyboard)
     result_data = result_data + [int(user_input)] if question_types_values[question_index] == 'int' else result_data + [user_input]
     history = history + [new_template]
     question_index = question_index + 1
@@ -113,42 +113,42 @@ async def process_handle_add_deadline_answer(message: Message, state: FSMContext
     if not '❓' in new_template:
         if len(result_data) > 7:
             if not check_reminder(result_data[2], result_data[3], result_data[4], result_data[5], result_data[6], [result_data[-3], result_data[-2], result_data[-1]]):
-                await message.bot.edit_message_text(chat_id=message.from_user.id, message_id=template_message_id, text="🚫Упс, введенное вами напоминание прошло", reply_markup=fix_reminder_keyboard)
+                await message.bot.edit_message_text(chat_id=message.chat.id, message_id=template_message_id, text="🚫Упс, введенное вами напоминание прошло", reply_markup=fix_reminder_keyboard)
                 history = history[:-3]
                 result_data = result_data[:-3]
                 question_index = question_index - 3
-                await state.update_data(history=history, result_data=result_data, question_index=question_index, template="🚫Упс, введенное вами напоминание прошло")
+                await state.update_data(history=history, result_data=result_data, question_index=question_index, template=None)
                 return
             if result_data[-3] == result_data[-2] == result_data[-1] == 0:
-                await message.bot.edit_message_text(chat_id=message.from_user.id, message_id=template_message_id, text="🚫Упс, вы ввели напоминание совпадающее с дедлайном. \n\n⚡️Не думаю, что вы способны выполнять дела со скоростью света)", reply_markup=fix_reminder_keyboard)
+                await message.bot.edit_message_text(chat_id=message.chat.id, message_id=template_message_id, text="🚫Упс, вы ввели напоминание совпадающее с дедлайном. \n\n⚡️Не думаю, что вы способны выполнять дела со скоростью света)", reply_markup=fix_reminder_keyboard)
                 history = history[:-3]
                 result_data = result_data[:-3]
                 question_index = question_index - 3
-                await state.update_data(history=history, result_data=result_data, question_index=question_index, template="🚫Упс, вы ввели напоминание совпадающее с дедлайном. \n\n⚡️Не думаю, что вы способны выполнять дела со скоростью света)")
+                await state.update_data(history=history, result_data=result_data, question_index=question_index, template=None)
                 return
             if (result_data[-3] == 0 and result_data[-2] == 6 and result_data[-1] == 0) or (result_data[-3] == 0 and result_data[-2] == 3 and result_data[-1] == 0):
-                await message.bot.edit_message_text(chat_id=message.from_user.id, message_id=template_message_id, text="🚫Упс, вы ввели напоминание совпадающее с одним из основных (3 часа, 6 часов)", reply_markup=fix_reminder_keyboard)
+                await message.bot.edit_message_text(chat_id=message.chat.id, message_id=template_message_id, text="🚫Упс, вы ввели напоминание совпадающее с одним из основных (3 часа, 6 часов)", reply_markup=fix_reminder_keyboard)
                 history = history[:-3]
                 result_data = result_data[:-3]
                 question_index = question_index - 3
-                await state.update_data(history=history, result_data=result_data, question_index=question_index, template="🚫Упс, вы ввели напоминание совпадающее с одним из основных (3 часа, 6 часов)")
+                await state.update_data(history=history, result_data=result_data, question_index=question_index, template=None)
                 return
-        await message.bot.edit_message_text(chat_id=message.from_user.id, message_id=template_message_id, text=f'Заполнение анкеты почти завершено\n\nНужно ли добавить напоминания помимо основных (за 3 часа, 6 часов) и добавленных вами к данному дедлайну?', reply_markup=ask_reminders_deadline_keyboard)
-        await state.update_data(template='Заполнение анкеты почти завершено\n\nНужно ли добавить напоминания помимо основных (за 3 часа, 6 часов) и добавленных вами к данному дедлайну?')
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=template_message_id, text=f'Заполнение анкеты почти завершено\n\nНужно ли добавить напоминания помимо основных (за 3 часа, 6 часов) и добавленных вами к данному дедлайну?', reply_markup=ask_reminders_deadline_keyboard)
+        await state.update_data(template=None)
 
 
-@admin_router.callback_query(F.from_user.id.in_(admin_ids), F.data == 'restart', or_f(StateFilter(FSMAdminAddDeadline.filling_deadline_info), StateFilter(FSMAdminAddUser.filling_user_info)))
+@admin_router.callback_query(F.message.chat.id.in_(admin_ids), F.data == 'restart', or_f(StateFilter(FSMAdminAddDeadline.filling_deadline_info), StateFilter(FSMAdminAddUser.filling_user_info)))
 async def process_restart_template_deadline(callback_query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     if data.get('selected_subjects') is None:
         await callback_query.message.edit_text(text='Выберите предмет, для которого нужно добавить дедлайн', reply_markup=add_subject_keyboard)
-        await state.update_data(template='Выберите предмет, для которого нужно добавить дедлайн', question_index=0, history=[LEXICON_RU['pattern_add_deadline']], result_data=[], last_interaction=int(time.time()))
+        await state.update_data(template=None, question_index=0, history=[LEXICON_RU['pattern_add_deadline']], result_data=[], last_interaction=int(time.time()))
     else:
-        await callback_query.message.edit_text(text='Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны', reply_markup=generate_choice_subjects(template_message_info['subjects'], []))
-        await state.update_data(template='Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны', question_index=0, history=[LEXICON_RU['pattern_add_user']], result_data=[], last_interaction=int(time.time()), selected_subjects=[])
+        await callback_query.message.edit_text(text='Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны', reply_markup=generate_choice_subjects([]))
+        await state.update_data(template=None, question_index=0, history=[LEXICON_RU['pattern_add_user']], result_data=[], last_interaction=int(time.time()), selected_subjects=[])
 
 
-@admin_router.callback_query(F.from_user.id.in_(admin_ids), F.data == 'back', or_f(StateFilter(FSMAdminAddDeadline.filling_deadline_info), StateFilter(FSMAdminAddUser.filling_user_info)))
+@admin_router.callback_query(F.message.chat.id.in_(admin_ids), F.data == 'back', or_f(StateFilter(FSMAdminAddDeadline.filling_deadline_info), StateFilter(FSMAdminAddUser.filling_user_info)))
 async def process_back_template_deadline(callback_query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     history = data.get('history')
@@ -160,7 +160,7 @@ async def process_back_template_deadline(callback_query: CallbackQuery, state: F
     if selected_subjects is None:
         if question_index == 0:
             await callback_query.message.edit_text(text='Выберите предмет, для которого нужно добавить дедлайн', reply_markup=add_subject_keyboard)
-            await state.update_data(template='Выберите предмет, для которого нужно добавить дедлайн')
+            await state.update_data(template=None)
         else:
             if not '❓' in history[-1]:
                 history = history[:-1]
@@ -168,20 +168,20 @@ async def process_back_template_deadline(callback_query: CallbackQuery, state: F
             await callback_query.message.edit_text(text=history[-1], reply_markup=add_keyboard)
     else:
         if question_index == 0:
-            await callback_query.message.edit_text(text='Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны', reply_markup=generate_choice_subjects(template_message_info['subjects'], selected_subjects))
-            await state.update_data(template='Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны')
+            await callback_query.message.edit_text(text='Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны', reply_markup=generate_choice_subjects(selected_subjects))
+            await state.update_data(template=None)
         else:
             await callback_query.message.edit_text(text=history[-1], reply_markup=add_keyboard)
 
 
-@admin_router.callback_query(F.from_user.id.in_(admin_ids), F.data == 'cancel_template', or_f(StateFilter(FSMAdminAddDeadline.filling_deadline_info), StateFilter(FSMAdminAddUser.filling_user_info)))
+@admin_router.callback_query(F.message.chat.id.in_(admin_ids), F.data == 'cancel_template', or_f(StateFilter(FSMAdminAddDeadline.filling_deadline_info), StateFilter(FSMAdminAddUser.filling_user_info)))
 async def process_cancel_template_deadline(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.message.delete()
     await state.clear()
     await callback_query.answer()
 
 
-@admin_router.callback_query(F.from_user.id.in_(admin_ids), F.data == 'yes_reminders_deadline', StateFilter(FSMAdminAddDeadline.filling_deadline_info))
+@admin_router.callback_query(F.message.chat.id.in_(admin_ids), F.data == 'yes_reminders_deadline', StateFilter(FSMAdminAddDeadline.filling_deadline_info))
 async def process_add_reminder_deadline(callback_query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     history = data.get('history')
@@ -194,7 +194,7 @@ async def process_add_reminder_deadline(callback_query: CallbackQuery, state: FS
     await callback_query.message.edit_text(text=template, reply_markup=add_keyboard)
 
 
-@admin_router.callback_query(F.from_user.id.in_(admin_ids), F.data == 'no_reminders_deadline', StateFilter(FSMAdminAddDeadline.filling_deadline_info))
+@admin_router.callback_query(F.message.chat.id.in_(admin_ids), F.data == 'no_reminders_deadline', StateFilter(FSMAdminAddDeadline.filling_deadline_info))
 async def process_stop_filling_deadline(callback_query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     result_data = data.get('result_data')
@@ -210,7 +210,7 @@ async def process_stop_filling_deadline(callback_query: CallbackQuery, state: FS
             result_data = data.get('result_data')
             new_template = history[7]
             for j in range(index):
-                history += [f'> <u>Напоминание (помимо основных)</u>:\n   • день: <b>❓</b>\n   • час: <b>❓</b>\n   • минута: <b>❓</b>', new_template + f'\n> <u>Напоминание (помимо основных)</u>:\n   • день: <b>{reminder_list[j][0]}</b>\n   • час: <b>❓</b>\n   • минута: <b>❓</b>', new_template + f'\n> <u>Напоминание (помимо основных)</u>:\n   • день: <b>{reminder_list[j][0]}</b>\n   • час: <b>{reminder_list[j][1]}</b>\n   • минута: <b>❓</b>', new_template + f'\n> <u>Напоминание (помимо основных)</u>:\n   • день: <b>{reminder_list[j][0]}</b>\n   • час: <b>{reminder_list[j][1]}</b>\n   • минута: <b>{reminder_list[j][2]}</b>']
+                history += [new_template + f'> <u>Напоминание (помимо основных)</u>:\n   • день: <b>❓</b>\n   • час: <b>❓</b>\n   • минута: <b>❓</b>', new_template + f'\n> <u>Напоминание (помимо основных)</u>:\n   • день: <b>{reminder_list[j][0]}</b>\n   • час: <b>❓</b>\n   • минута: <b>❓</b>', new_template + f'\n> <u>Напоминание (помимо основных)</u>:\n   • день: <b>{reminder_list[j][0]}</b>\n   • час: <b>{reminder_list[j][1]}</b>\n   • минута: <b>❓</b>', new_template + f'\n> <u>Напоминание (помимо основных)</u>:\n   • день: <b>{reminder_list[j][0]}</b>\n   • час: <b>{reminder_list[j][1]}</b>\n   • минута: <b>{reminder_list[j][2]}</b>']
                 new_template = new_template + f'\n> <u>Напоминание (помимо основных)</u>:\n   • день: <b>{reminder_list[j][0]}</b>\n   • час: <b>{reminder_list[j][1]}</b>\n   • минута: <b>{reminder_list[j][2]}</b>'
             new_template += '\n> <u>Напоминание (помимо основных)</u>:\n   • день: <b>❓</b>\n   • час: <b>❓</b>\n   • минута: <b>❓</b>'
             history = history + [new_template]
@@ -218,7 +218,7 @@ async def process_stop_filling_deadline(callback_query: CallbackQuery, state: FS
             for part in reminder_list[:index]:
                 result_data.extend(part)
             await state.update_data(template='🫠Упс, видимо пока вы заполняли анкету, некоторые напоминания <i><b>истекли</b></i>(', history=history, question_index=question_index-((len(reminder_list) - index)*3), result_data=result_data, last_interaction=int(time.time()))
-            await callback_query.message.edit_text(text='🫠Упс, видимо пока вы заполняли анкету, некоторые напоминания <i><b>истекли</b></i>(', reply_markup=fix_reminder_keyboard)
+            await callback_query.message.edit_text(text=None, reply_markup=fix_reminder_keyboard)
             return
 
     await callback_query.message.edit_text(text=f'✅Заполнение анкеты добавления нового дедлайна курса от имени администратора <b>завершено</b>! Дедлайн добавлен всем пользователям курса')
@@ -229,7 +229,7 @@ async def process_stop_filling_deadline(callback_query: CallbackQuery, state: FS
     await state.clear()
 
 
-@admin_router.callback_query(F.from_user.id.in_(admin_ids), F.data == 'continue_adding', or_f(StateFilter(FSMAdminAddDeadline.filling_deadline_info), StateFilter(FSMAdminAddUser.filling_user_info)))
+@admin_router.callback_query(F.message.chat.id.in_(admin_ids), F.data == 'continue_adding', or_f(StateFilter(FSMAdminAddDeadline.filling_deadline_info), StateFilter(FSMAdminAddUser.filling_user_info)))
 async def process_continue_filling_button(callback_query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     history = data.get('history')
@@ -237,7 +237,7 @@ async def process_continue_filling_button(callback_query: CallbackQuery, state: 
     question_index = data.get('question_index')
     if data.get('selected_subjects') is None:
         if question_index == 0:
-            await state.update_data(template='Выберите предмет, для которого нужно добавить дедлайн')
+            await state.update_data(template=None)
             await callback_query.message.edit_text(text='Выберите предмет, для которого нужно добавить дедлайн', reply_markup=add_subject_keyboard)
         else:
             await state.update_data(template=history[-1])
@@ -249,29 +249,29 @@ async def process_continue_filling_button(callback_query: CallbackQuery, state: 
                     history = history[:-3]
                     result_data = result_data[:-3]
                     question_index = question_index - 3
-                    await state.update_data(history=history, result_data=result_data, question_index=question_index, template="🚫Упс, введенное вами напоминание прошло")
+                    await state.update_data(history=history, result_data=result_data, question_index=question_index, template=None)
                     return
                 if result_data[-3] == result_data[-2] == result_data[-1] == 0:
                     await callback_query.message.edit_text(text="🚫Упс, вы ввели напоминание совпадающее с дедлайном. \n\n⚡️Не думаю, что вы способны выполнять дела со скоростью света)", reply_markup=fix_reminder_keyboard)
                     history = history[:-3]
                     result_data = result_data[:-3]
                     question_index = question_index - 3
-                    await state.update_data(history=history, result_data=result_data, question_index=question_index, template="🚫Упс, вы ввели напоминание совпадающее с дедлайном. \n\n⚡️Не думаю, что вы способны выполнять дела со скоростью света)")
+                    await state.update_data(history=history, result_data=result_data, question_index=question_index, template=None)
                     return
                 if (result_data[-3] == 0 and result_data[-2] == 6 and result_data[-1] == 0) or (result_data[-3] == 0 and result_data[-2] == 3 and result_data[-1] == 0):
                     await callback_query.message.edit_text(text="🚫Упс, вы ввели напоминание совпадающее с одним из основных (3 часа, 6 часов)", reply_markup=fix_reminder_keyboard)
                     history = history[:-3]
                     result_data = result_data[:-3]
                     question_index = question_index - 3
-                    await state.update_data(history=history, result_data=result_data, question_index=question_index, template="🚫Упс, вы ввели напоминание совпадающее с одним из основных (3 часа, 6 часов)")
+                    await state.update_data(history=history, result_data=result_data, question_index=question_index, template=None)
                     return
-            await state.update_data(template='Заполнение анкеты почти завершено\n\nНужно ли добавить напоминания помимо основных (3 часа, 6 часов) и добавленных вами к данному дедлайну?')
+            await state.update_data(template=None)
             await callback_query.message.edit_text(text=f'Заполнение анкеты почти завершено\n\nНужно ли добавить напоминания помимо основных (3 часа, 6 часов) и добавленных вами к данному дедлайну?', reply_markup=ask_reminders_deadline_keyboard)
     else:
         if question_index == 0:
             subjects_data = data.get('selected_subjects')
-            await state.update_data(template='Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны')
-            await callback_query.message.edit_text(text='Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны', reply_markup=generate_choice_subjects(template_message_info['subjects'], subjects_data))
+            await state.update_data(template=None)
+            await callback_query.message.edit_text(text='Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны', reply_markup=generate_choice_subjects(subjects_data))
         else:
             await state.update_data(template=history[-1])
             await callback_query.message.edit_text(text=history[-1], reply_markup=add_keyboard)
@@ -280,7 +280,7 @@ async def process_continue_filling_button(callback_query: CallbackQuery, state: 
     await callback_query.answer()
 
 
-@admin_router.callback_query(F.from_user.id.in_(admin_ids), F.data == 'fix_reminder', StateFilter(FSMAdminAddDeadline.filling_deadline_info))
+@admin_router.callback_query(F.message.chat.id.in_(admin_ids), F.data == 'fix_reminder', StateFilter(FSMAdminAddDeadline.filling_deadline_info))
 async def process_fix_reminder_button(callback_query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     history = data.get('history')
@@ -288,7 +288,7 @@ async def process_fix_reminder_button(callback_query: CallbackQuery, state: FSMC
     await callback_query.message.edit_text(text=history[-1], reply_markup=add_keyboard)
 
 
-@admin_router.callback_query(F.from_user.id.in_(admin_ids), F.data.in_(['pe_add', 'economics_add', 'russia_add', 'digital_add', 'english_add']), StateFilter(FSMAdminAddDeadline.filling_deadline_info))
+@admin_router.callback_query(F.message.chat.id.in_(admin_ids), F.data.in_(['pe_add', 'economics_add', 'russia_add', 'digital_add', 'english_add']), StateFilter(FSMAdminAddDeadline.filling_deadline_info))
 async def process_subject_name_button(callback_query: CallbackQuery, state: FSMContext):
     calldata = callback_query.data
     result_subject = template_message_info['subjects'][('pe_add', 'economics_add', 'russia_add', 'digital_add', 'english_add').index(calldata)]
@@ -300,28 +300,28 @@ async def process_subject_name_button(callback_query: CallbackQuery, state: FSMC
 # --------------------- ADD USER BY ADMIN ---------------------
 
 
-@admin_router.message(F.from_user.id.in_(admin_ids), Command(commands='add_user'), StateFilter(default_state))
+@admin_router.message(F.chat.id.in_(admin_ids), Command(commands='add_user'), StateFilter(default_state))
 async def process_start_add_user(message: Message, state: FSMContext):
-    template_message = await message.answer('Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны', reply_markup=generate_choice_subjects(template_message_info['subjects'], []))
+    template_message = await message.answer('Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны', reply_markup=generate_choice_subjects([]))
     question_types = {'subject_names': 'str', 'id': 'int', 'username': 'str', 'fullname': 'str'}
-    await state.update_data(template='Выберите из предложенного списка курсы, по которым пользователь будет получать дедлайны', template_id=template_message.message_id, question_types=question_types, question_index=0, history=[LEXICON_RU['pattern_add_user']], result_data=[], last_interaction=int(time.time()), selected_subjects=[])
+    await state.update_data(template=None, template_id=template_message.message_id, question_types=question_types, question_index=0, history=[LEXICON_RU['pattern_add_user']], result_data=[], last_interaction=int(time.time()), selected_subjects=[])
     await state.set_state(FSMAdminAddUser.filling_user_info)
-    await auto_delete_message(message.bot, message.from_user.id, template_message.message_id, state, 300)
+    await auto_delete_message(message.bot, message.chat.id, template_message.message_id, state, 300)
 
 
-@admin_router.message(F.from_user.id.in_(admin_ids), or_f(Command(commands='add_user'), Command(commands='add_deadline')), StateFilter(FSMAdminAddUser.filling_user_info))
+@admin_router.message(F.chat.id.in_(admin_ids), or_f(Command(commands='add_user'), Command(commands='add_deadline')), StateFilter(FSMAdminAddUser.filling_user_info))
 async def process_fake_start_add_user(message: Message, state: FSMContext):
     data = await state.get_data()
     bot_message = await message.answer('❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового пользователя от имени администратора. Вы хотите продолжить заполнение?', reply_markup=check_continue_keyboard)
     try:
-        await bot_message.bot.delete_message(chat_id=message.from_user.id, message_id=data.get('template_id'))
+        await bot_message.bot.delete_message(chat_id=message.chat.id, message_id=data.get('template_id'))
     except TelegramBadRequest:
         pass
-    await state.update_data(template_id=bot_message.message_id, last_interaction=int(time.time()), template='❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового пользователя от имени администратора. Вы хотите продолжить заполнение?')
-    await auto_delete_message(message.bot, message.from_user.id, bot_message.message_id, state, 300)
+    await state.update_data(template_id=bot_message.message_id, last_interaction=int(time.time()), template=None)
+    await auto_delete_message(message.bot, message.chat.id, bot_message.message_id, state, 300)
 
 
-@admin_router.message(F.from_user.id.in_(admin_ids), StateFilter(FSMAdminAddUser.filling_user_info))
+@admin_router.message(F.chat.id.in_(admin_ids), StateFilter(FSMAdminAddUser.filling_user_info))
 async def process_handle_add_user_answer(message: Message, state: FSMContext):
     data = await state.get_data()
     template_message_id = data.get('template_id')
@@ -329,23 +329,23 @@ async def process_handle_add_user_answer(message: Message, state: FSMContext):
     if template_message_info['need_to_delete']:
         for m_id in template_message_info['need_to_delete']:
             try:
-                await message.bot.delete_message(chat_id=message.from_user.id, message_id=m_id)
+                await message.bot.delete_message(chat_id=message.chat.id, message_id=m_id)
             except TelegramBadRequest:
                 pass
         template_message_info['need_to_delete'].clear()
     if not data.get('last_interaction'):
         await message.delete()
         bot_message = await message.answer('❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового пользователя от имени администратора. Вы хотите продолжить заполнение?', reply_markup=check_continue_keyboard)
-        await state.update_data(template_id=bot_message.message_id, last_interaction=int(time.time()), template='❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового пользователя от имени администратора. Вы хотите продолжить заполнение?')
-        await auto_delete_message(message.bot, message.from_user.id, bot_message.message_id, state, 300)
+        await state.update_data(template_id=bot_message.message_id, last_interaction=int(time.time()), template=None)
+        await auto_delete_message(message.bot, message.chat.id, bot_message.message_id, state, 300)
         return
-    if not template.startswith('<i><b>ДОБАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯ</b> от имени администратора</i>'):
+    if not template:
         await message.delete()
         return
-    if message.text in ('⏳БЛИЖАЙШИЕ ДЕДЛАЙНЫ⏳', '📚ДЕДЛАЙНЫ ПО ПРЕДМЕТАМ📚', '⚙️Помощь⚙️', '👨🏻‍💻Создатели👨🏻‍💻'):
+    if message.text in ('⏳БЛИЖАЙШИЕ ДЕДЛАЙНЫ⏳', '📚ДЕДЛАЙНЫ ПО ПРЕДМЕТАМ📚', '⚙️Помощь⚙️', '👨🏻‍💻Создатели👨🏻‍💻', '🐵АККАУНТ🐵', '👑СВОИ ДЕДЛАЙНЫ👑', '🎯ДОБАВИТЬ СОБСТВЕННЫЙ ДЕДЛАЙН🎯'):
         await message.delete()
-        bot_message = await message.bot.edit_message_text(chat_id=message.from_user.id, message_id=template_message_id, text='❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового пользователя от имени администратора. Вы хотите продолжить заполнение?', reply_markup=check_continue_keyboard)
-        await state.update_data(last_interaction=int(time.time()), template='❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового пользователя от имени администратора. Вы хотите продолжить заполнение?')
+        bot_message = await message.bot.edit_message_text(chat_id=message.chat.id, message_id=template_message_id, text='❗️Вы <b><u>не завершили</u></b> прошлое заполнение нового пользователя от имени администратора. Вы хотите продолжить заполнение?', reply_markup=check_continue_keyboard)
+        await state.update_data(last_interaction=int(time.time()), template=None)
         return
 
     user_input = message.text
@@ -363,11 +363,11 @@ async def process_handle_add_user_answer(message: Message, state: FSMContext):
     new_template = template.replace('❓', user_input, 1)
 
     await message.delete()
-    await message.bot.edit_message_text(chat_id=message.from_user.id, message_id=template_message_id, text=new_template, reply_markup=add_keyboard)
+    await message.bot.edit_message_text(chat_id=message.chat.id, message_id=template_message_id, text=new_template, reply_markup=add_keyboard)
     result_data = result_data + [int(user_input)] if question_types_values[question_index] == 'int' else result_data + [user_input]
     await state.update_data(history=history + [new_template], question_index=question_index + 1, template=new_template, result_data=result_data, last_interaction=int(time.time()))
     if not '❓' in new_template:
-        await message.bot.edit_message_text(chat_id=message.from_user.id, message_id=template_message_id, text=f'✅Заполнение анкеты добавления нового пользователя <b>завершено</b>! Все нынешние дедлайны курсов, выбранные этим пользователем, добавлены.')
+        await message.bot.edit_message_text(chat_id=message.chat.id, message_id=template_message_id, text=f'✅Заполнение анкеты добавления нового пользователя <b>завершено</b>! Все нынешние дедлайны курсов, выбранные этим пользователем, добавлены.')
         result_dict = {}
         for key, value in zip(data.get('question_types').keys(), result_data):
             result_dict[key] = value
@@ -375,7 +375,7 @@ async def process_handle_add_user_answer(message: Message, state: FSMContext):
         await state.clear()
 
 
-@admin_router.callback_query(F.from_user.id.in_(admin_ids), F.data.in_(['pe_choice', 'economics_choice', 'russia_choice', 'digital_choice', 'english_choice']), StateFilter(FSMAdminAddUser.filling_user_info))
+@admin_router.callback_query(F.message.chat.id.in_(admin_ids), F.data.in_(['pe_choice', 'economics_choice', 'russia_choice', 'digital_choice', 'english_choice']), StateFilter(FSMAdminAddUser.filling_user_info))
 async def process_get_subjects_button(callback_query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     selected_subjects = data.get("selected_subjects")
@@ -385,10 +385,10 @@ async def process_get_subjects_button(callback_query: CallbackQuery, state: FSMC
         selected_subjects.append(callback_query.data)
 
     await state.update_data(selected_subjects=selected_subjects, last_interaction=int(time.time()))
-    await callback_query.message.edit_reply_markup(reply_markup=generate_choice_subjects(template_message_info['subjects'], selected_subjects))
+    await callback_query.message.edit_reply_markup(reply_markup=generate_choice_subjects(selected_subjects))
 
 
-@admin_router.callback_query(F.from_user.id.in_(admin_ids), F.data == 'confirm_choice_subjects', StateFilter(FSMAdminAddUser.filling_user_info))
+@admin_router.callback_query(F.message.chat.id.in_(admin_ids), F.data == 'confirm_choice_subjects', StateFilter(FSMAdminAddUser.filling_user_info))
 async def process_confirm_subjects_button(callback_query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     question_index = data.get('question_index')
